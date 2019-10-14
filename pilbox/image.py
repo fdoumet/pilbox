@@ -23,6 +23,7 @@ import os.path
 
 import PIL.Image
 import PIL.ImageOps
+import PIL.JpegImagePlugin
 
 from pilbox import errors
 
@@ -91,6 +92,8 @@ class Image(object):
 
         # Cache original Exif data, since it can be erased by some operations
         self._exif = self.img.info.get('exif', b'')
+        self._quantization = getattr(self.img, 'quantization', None)
+        self._subsampling = PIL.JpegImagePlugin.get_sampling(self.img)
 
         if self.img.format.lower() not in self.FORMATS:
             raise errors.ImageFormatError(
@@ -287,7 +290,9 @@ class Image(object):
             self.img.format = self._orig_format
             save_kwargs["subsampling"] = "keep"
             if opts["quality"] == "keep":
-                save_kwargs["quality"] = "keep"
+                save_kwargs["quality"] = "keep" if self._quantization is None else 0
+                save_kwargs["subsampling"] = self._subsampling
+                save_kwargs["qtables"] = self._quantization
 
         try:
             self.img.save(outfile, fmt, **save_kwargs)
