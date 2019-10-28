@@ -145,7 +145,7 @@ class PilboxApplication(tornado.web.Application):
 
 class ImageHandler(tornado.web.RequestHandler):
     FORWARD_HEADERS = ["Cache-Control", "Expires", "Last-Modified"]
-    OPERATIONS = ["region", "resize", "rotate", "noop"]
+    OPERATIONS = ["region", "resize", "rotate", "noop", "watermark"]
 
     _FORMAT_TO_MIME = {
         "gif": "image/gif",
@@ -187,6 +187,13 @@ class ImageHandler(tornado.web.RequestHandler):
             opts.update(self._get_rotate_options())
         if "region" in ops:
             Image.validate_rectangle(self.get_argument("rect"))
+        if "watermark" in ops:
+            url=self.get_argument("watermark_img")
+            text=self.get_argument("watermark_txt")
+            if url and not url.startswith("http://") and not url.startswith("https://"):
+                raise errors.DimensionsError("Unsupported protocol")
+            if text is None or not text:
+                raise errors.DimensionsError("Watermark text cannot be empty")
 
         Image.validate_options(opts)
 
@@ -246,6 +253,8 @@ class ImageHandler(tornado.web.RequestHandler):
                 self._image_rotate(image)
             elif operation == "region":
                 self._image_region(image)
+            elif operation == "watermark":
+                self._image_watermark(image)
 
         return (self._image_save(image), image.img.format)
 
@@ -259,6 +268,10 @@ class ImageHandler(tornado.web.RequestHandler):
     def _image_rotate(self, image):
         opts = self._get_rotate_options()
         image.rotate(self.get_argument("deg"), **opts)
+
+    def _image_watermark(self, image):
+        opts = self._get_watermark_options()
+        image.watermark(self.get_argument("watermark_pos"), **opts)
 
     def _image_save(self, image):
         opts = self._get_save_options()
@@ -293,6 +306,15 @@ class ImageHandler(tornado.web.RequestHandler):
         return self._get_options(
             dict(expand=self.get_argument("expand")))
 
+    def _get_watermark_options(self):
+        return self._get_options(
+            dict(watermark_txt=self.get_argument("watermark_txt"),
+                 watermark_img=self.get_argument("watermark_img"),
+                 watermark_pos=self.get_argument("watermark_pos"),
+                 watermark_txt_size=self.get_argument("watermark_txt_size"),
+                 watermark_txt_color=self.get_argument("watermark_txt_color"),
+                 watermark_img_ratio=self.get_argument("watermark_img_ratio")))
+
     def _get_save_options(self):
         return self._get_options(
             dict(format=self.get_argument("fmt"),
@@ -300,7 +322,11 @@ class ImageHandler(tornado.web.RequestHandler):
                  quality=self.get_argument("q"),
                  progressive=self.get_argument("prog"),
                  background=self.get_argument("bg"),
-                 preserve_exif=self.get_argument("exif")))
+                 preserve_exif=self.get_argument("exif"),
+                 watermark_pos=self.get_argument("watermark_pos"),
+                 watermark_txt_size=self.get_argument("watermark_txt_size"),
+                 watermark_txt_color=self.get_argument("watermark_txt_color"),
+                 watermark_img_ratio=self.get_argument("watermark_img_ratio")))
 
     def _get_options(self, opts):
         for k, v in opts.items():

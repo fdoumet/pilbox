@@ -119,6 +119,21 @@ class RetainError(BadRequestError):
     def get_code():
         return 14
 
+class WatermarkPosError(BadRequestError):
+    @staticmethod
+    def get_code():
+        return 15
+
+class WatermarkTxtError(BadRequestError):
+    @staticmethod
+    def get_code():
+        return 16
+
+class WatermarkImgError(BadRequestError):
+    @staticmethod
+    def get_code():
+        return 17
+
 
 class FetchError(PilboxError):
     def __init__(self, msg=None, *args, **kwargs):

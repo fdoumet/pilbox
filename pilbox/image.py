@@ -20,12 +20,17 @@ from __future__ import absolute_import, division, print_function, \
 import logging
 import re
 import os.path
+from ast import literal_eval as make_tuple
 
 import PIL.Image
 import PIL.ImageOps
 import PIL.JpegImagePlugin
+from PIL import ImageDraw
+from PIL import ImageFont
 
 from pilbox import errors
+
+import tornado
 
 try:
     from io import BytesIO
@@ -73,6 +78,7 @@ class Image(object):
     FILTERS = _filters_to_pil.keys()
     FORMATS = _formats_to_pil.keys()
     MODES = ["adapt", "clip", "crop", "fill", "scale"]
+    COLORS = ["black", "white"]
     POSITIONS = _positions_to_ratios.keys()
 
     _DEFAULTS = dict(background="0fff", expand=False, filter="antialias",
@@ -170,6 +176,21 @@ class Image(object):
               int(opts["retain"]) < 0):
             raise errors.RetainError(
                 "Invalid retain: %s" % str(opts["retain"]))
+        elif not Image._istuple(opts["watermark_pos"]):
+            raise errors.WatermarkPosError("Invalid watermark_pos: %s" % str(opts["watermark_pos"]))
+        elif (not Image._isint(opts["watermark_txt_size"]) or
+              int(opts["watermark_txt_size"]) > 100 or
+              int(opts["watermark_txt_size"]) < 0):
+            raise errors.WatermarkTxtError("Invalid watermark_txt_size: %s" % str(opts["watermark_txt_size"]))
+        elif (not Image._isint(opts["watermark_img_ratio"]) or
+              int(opts["watermark_img_ratio"]) > 100 or
+              int(opts["watermark_img_ratio"]) < 0):
+            raise errors.WatermarkImgError("Invalid watermark_img_ratio: %s" % str(opts["watermark_img_ratio"]))
+        elif opts["watermark_txt_color"] not in Image.COLORS:
+            raise errors.WatermarkTxtError("Invalid watermark_txt_color: %s" % opts["watermark_txt_color"])
+
+        print("!!!", opts["watermark_txt_size"])
+
 
     def region(self, rect):
         """ Selects a sub-region of the image using the supplied rectangle,
@@ -207,6 +228,51 @@ class Image(object):
         else:
             self._crop(size, opts)
         return self
+
+    def watermark(self, position, **kwargs):
+        pos = make_tuple(position)
+
+        opts = Image._normalize_options(kwargs)
+        watermark_txt = opts["watermark_txt"] if "watermark_txt" in opts else None
+        watermark_img = opts["watermark_img"] if "watermark_img" in opts else None
+
+        if watermark_txt:
+            watermark_txt_size = int(opts["watermark_txt_size"] if "watermark_txt_size" in opts else 30)
+            watermark_txt_color = opts["watermark_txt_color"] if "watermark_txt_color" in opts else "black"
+
+            # make the image editable
+            drawing = ImageDraw.Draw(self.img)
+
+            if watermark_txt_color == "white":
+                color = (255,255,255)
+            else:
+                color = (3, 8, 12)
+            font = ImageFont.truetype("pilbox/arial.ttf", watermark_txt_size)
+            drawing.text(pos, watermark_txt, fill=color, font=font)
+
+        elif watermark_img:
+            # Get watermark image ratio
+            watermark_img_ratio = (opts["watermark_img_ratio"] if "watermark_img_ratio" in opts else 5)/100
+
+            # Get watermark image
+            client = tornado.httpclient.HTTPClient()
+            resp = client.fetch(watermark_img)
+            watermark = PIL.Image.open(resp.buffer)
+
+            # Get size of target image
+            width, height = self.img.size
+            # Resize watermark to a percentage of the target image's height
+            targetHeight = int(height * watermark_img_ratio)
+            hpercent = (watermark.size[0]/float(watermark.size[1]))
+            wsize = int(targetHeight*float(hpercent))
+            watermark = watermark.resize((wsize, targetHeight))
+
+            # Create new watermarked images
+            transparent = PIL.Image.new('RGBA', (width, height), (0,0,0,0))
+            transparent.paste(self.img, (0,0))
+            transparent.paste(watermark, box=pos, mask=watermark)
+            self.img = transparent
+
 
     def rotate(self, deg, **kwargs):
         """ Rotates the image clockwise around its center.  Returns the
@@ -439,6 +505,16 @@ class Image(object):
             if type(v) is not bool:
                 int(str(v), base)
         except ValueError:
+            return False
+        return True
+
+    @staticmethod
+    def _istuple(s, size=2):
+        try:
+            t=make_tuple(s)
+            if len(t) != size:
+                return False
+        except:
             return False
         return True
 
