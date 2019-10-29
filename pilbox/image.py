@@ -189,8 +189,6 @@ class Image(object):
         elif "watermark_txt_color" in opts and opts["watermark_txt_color"] not in Image.COLORS:
             raise errors.WatermarkTxtError("Invalid watermark_txt_color: %s" % opts["watermark_txt_color"])
 
-        print("!!!", opts["watermark_txt_size"])
-
 
     def region(self, rect):
         """ Selects a sub-region of the image using the supplied rectangle,
