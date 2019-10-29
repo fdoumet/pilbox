@@ -145,7 +145,7 @@ class PilboxApplication(tornado.web.Application):
         tornado.web.Application.__init__(self, self.get_handlers(), **settings)
 
     def get_handlers(self):
-        return [(r"/transform", ImageHandler), ("/ping", LivenessHandler)]
+        return [(r"/transform", ImageHandler), (r"/transform/", ImageHandler), ("/ping", LivenessHandler)]
 
 class LivenessHandler(tornado.web.RequestHandler):
     @tornado.gen.coroutine
