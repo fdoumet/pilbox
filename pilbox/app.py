@@ -46,7 +46,7 @@ try:
 except ImportError:
     pycurl = None
 
-MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 600
+MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 5
 
 # general settings
 define("config", help="path to configuration file",
