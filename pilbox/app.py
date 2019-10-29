@@ -16,8 +16,12 @@
 
 from __future__ import absolute_import, division, with_statement
 
+from functools import partial
+
 import logging
+import signal
 import socket
+import time
 
 import tornado.escape
 import tornado.gen
@@ -42,6 +46,7 @@ try:
 except ImportError:
     pycurl = None
 
+MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 600
 
 # general settings
 define("config", help="path to configuration file",
@@ -140,8 +145,12 @@ class PilboxApplication(tornado.web.Application):
         tornado.web.Application.__init__(self, self.get_handlers(), **settings)
 
     def get_handlers(self):
-        return [(r"/", ImageHandler)]
+        return [(r"/", ImageHandler), ("/ping", LivenessHandler)]
 
+class LivenessHandler(tornado.web.RequestHandler):
+    @tornado.gen.coroutine
+    def get(self):
+        self.write({'message': 'success'})
 
 class ImageHandler(tornado.web.RequestHandler):
     FORWARD_HEADERS = ["Cache-Control", "Expires", "Last-Modified"]
@@ -370,7 +379,6 @@ class ImageHandler(tornado.web.RequestHandler):
 def parse_command_line():  # pragma: no cover
     tornado.options.parse_command_line()
 
-
 def start_server(app=None):  # pragma: no cover
     if options.debug:
         logger.setLevel(logging.DEBUG)
@@ -379,11 +387,35 @@ def start_server(app=None):  # pragma: no cover
     logger.info("Starting server...")
     try:
         server.bind(options.port)
+
+        signal.signal(signal.SIGTERM, partial(sig_handler, server))
+        signal.signal(signal.SIGINT, partial(sig_handler, server))
+
         server.start(1 if options.debug else options.workers)
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
         tornado.ioloop.IOLoop.instance().stop()
 
+def sig_handler(server, sig, frame):
+    io_loop = tornado.ioloop.IOLoop.instance()
+
+    def stop_loop(deadline):
+        now = time.time()
+        if now < deadline and (io_loop._callbacks or io_loop._timeouts):
+            logging.info('Waiting for next tick')
+            io_loop.add_timeout(now + 1, stop_loop, deadline)
+        else:
+            io_loop.stop()
+            logging.info('Shutdown finally')
+
+    def shutdown():
+        logging.info('Stopping http server')
+        server.stop()
+        logging.info('Will shutdown in %s seconds ...', MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
+        stop_loop(time.time() + MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
+
+    logging.warning('Caught signal: %s', sig)
+    io_loop.add_callback_from_signal(shutdown)
 
 def main(app=None):
     parse_command_line()
