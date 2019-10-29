@@ -274,8 +274,8 @@ class Image(object):
             transparent.paste(watermark, box=pos, mask=watermark)
             self.img = transparent
 
-    @staticmethod
     @ring.lru(expire=172800)
+    @staticmethod
     def get_watermark_img(url):
         return requests.get(url).content
 
