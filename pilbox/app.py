@@ -203,6 +203,8 @@ class ImageHandler(tornado.web.RequestHandler):
                 raise errors.DimensionsError("Unsupported protocol")
             if text is not None and not text:
                 raise errors.DimensionsError("Watermark text cannot be empty")
+            if text is None and url is None:
+                raise errors.DimensionsError("Watermark requires either watermark_img or watermark_txt")
 
         Image.validate_options(opts)
 
