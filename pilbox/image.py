@@ -34,6 +34,8 @@ from pilbox import errors
 
 import tornado
 
+import ring
+
 try:
     from io import BytesIO
 except ImportError:
@@ -256,8 +258,7 @@ class Image(object):
             watermark_img_ratio = int(opts["watermark_img_ratio"] if "watermark_img_ratio" in opts else 5)/100
 
             # Get watermark image
-            response = requests.get(watermark_img)
-            watermark = PIL.Image.open(BytesIO(response.content))
+            watermark = PIL.Image.open(BytesIO(Image.get_watermark_img(watermark_img)))
 
             # Get size of target image
             width, height = self.img.size
@@ -273,6 +274,10 @@ class Image(object):
             transparent.paste(watermark, box=pos, mask=watermark)
             self.img = transparent
 
+    @staticmethod
+    @ring.lru(expire=172800)
+    def get_watermark_img(url):
+        return requests.get(url).content
 
     def rotate(self, deg, **kwargs):
         """ Rotates the image clockwise around its center.  Returns the
