@@ -247,7 +247,8 @@ class Image(object):
                 color = (255,255,255)
             else:
                 color = (3, 8, 12)
-            font = ImageFont.truetype("pilbox/arial.ttf", watermark_txt_size)
+            #font = ImageFont.truetype("pilbox/arial.ttf", watermark_txt_size)
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", watermark_txt_size)
             drawing.text(pos, watermark_txt, fill=color, font=font)
 
         elif watermark_img:
