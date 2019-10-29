@@ -406,13 +406,13 @@ def sig_handler(server, sig, frame):
             io_loop.add_timeout(now + 1, stop_loop, deadline)
         else:
             io_loop.stop()
-            logging.info('Shutdown finally')
+            logging.warning('Shutdown finally')
 
     def shutdown():
-        logging.info('Stopping http server')
+        logging.warning('Stopping http server')
         server.close_all_connections()
         server.stop()
-        logging.info('Will shutdown in %s seconds ...', MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
+        logging.warning('Will shutdown in %s seconds ...', MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
         stop_loop(time.time() + MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
 
     logging.warning('Caught signal: %s', sig)
