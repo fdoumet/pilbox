@@ -251,7 +251,7 @@ class Image(object):
 
         elif watermark_img:
             # Get watermark image ratio
-            watermark_img_ratio = (opts["watermark_img_ratio"] if "watermark_img_ratio" in opts else 5)/100
+            watermark_img_ratio = int(opts["watermark_img_ratio"] if "watermark_img_ratio" in opts else 5)/100
 
             # Get watermark image
             client = tornado.httpclient.HTTPClient()
