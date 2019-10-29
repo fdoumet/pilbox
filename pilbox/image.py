@@ -178,15 +178,15 @@ class Image(object):
                 "Invalid retain: %s" % str(opts["retain"]))
         elif not Image._istuple(opts["watermark_pos"]):
             raise errors.WatermarkPosError("Invalid watermark_pos: %s" % str(opts["watermark_pos"]))
-        elif (not Image._isint(opts["watermark_txt_size"]) or
-              int(opts["watermark_txt_size"]) > 100 or
-              int(opts["watermark_txt_size"]) < 0):
+        elif ("watermark_txt_size" in opts and not Image._isint(opts["watermark_txt_size"]) or
+              "watermark_txt_size" in opts and int(opts["watermark_txt_size"]) > 100 or
+              "watermark_txt_size" in opts and int(opts["watermark_txt_size"]) < 0):
             raise errors.WatermarkTxtError("Invalid watermark_txt_size: %s" % str(opts["watermark_txt_size"]))
-        elif (not Image._isint(opts["watermark_img_ratio"]) or
-              int(opts["watermark_img_ratio"]) > 100 or
-              int(opts["watermark_img_ratio"]) < 0):
+        elif ("watermark_img_ratio" in opts and not Image._isint(opts["watermark_img_ratio"]) or
+              "watermark_img_ratio" in opts and int(opts["watermark_img_ratio"]) > 100 or
+              "watermark_img_ratio" in opts and int(opts["watermark_img_ratio"]) < 0):
             raise errors.WatermarkImgError("Invalid watermark_img_ratio: %s" % str(opts["watermark_img_ratio"]))
-        elif opts["watermark_txt_color"] not in Image.COLORS:
+        elif "watermark_txt_color" in opts and opts["watermark_txt_color"] not in Image.COLORS:
             raise errors.WatermarkTxtError("Invalid watermark_txt_color: %s" % opts["watermark_txt_color"])
 
         print("!!!", opts["watermark_txt_size"])
