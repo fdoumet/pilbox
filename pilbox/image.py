@@ -176,7 +176,7 @@ class Image(object):
               int(opts["retain"]) < 0):
             raise errors.RetainError(
                 "Invalid retain: %s" % str(opts["retain"]))
-        elif not Image._istuple(opts["watermark_pos"]):
+        elif "watermark_pos" in opts and not Image._istuple(opts["watermark_pos"]):
             raise errors.WatermarkPosError("Invalid watermark_pos: %s" % str(opts["watermark_pos"]))
         elif ("watermark_txt_size" in opts and not Image._isint(opts["watermark_txt_size"]) or
               "watermark_txt_size" in opts and int(opts["watermark_txt_size"]) > 100 or
