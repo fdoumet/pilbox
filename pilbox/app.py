@@ -410,7 +410,7 @@ def sig_handler(server, sig, frame):
 
     def shutdown():
         logging.warning('Stopping http server')
-        server.close_all_connections()
+        #server.close_all_connections()
         server.stop()
         logging.warning('Will shutdown in %s seconds ...', MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
         stop_loop(time.time() + MAX_WAIT_SECONDS_BEFORE_SHUTDOWN)
