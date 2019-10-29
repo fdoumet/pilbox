@@ -21,6 +21,8 @@ import logging
 import re
 import os.path
 from ast import literal_eval as make_tuple
+import requests
+from io import BytesIO
 
 import PIL.Image
 import PIL.ImageOps
@@ -254,9 +256,8 @@ class Image(object):
             watermark_img_ratio = int(opts["watermark_img_ratio"] if "watermark_img_ratio" in opts else 5)/100
 
             # Get watermark image
-            client = tornado.httpclient.HTTPClient()
-            resp = client.fetch(watermark_img)
-            watermark = PIL.Image.open(resp.buffer)
+            response = requests.get(watermark_img)
+            watermark = PIL.Image.open(BytesIO(response.content))
 
             # Get size of target image
             width, height = self.img.size
