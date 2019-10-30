@@ -28,7 +28,7 @@ except ImportError:
     from urllib.parse import urlencode, quote
 
 try:
-    import cv2 as cv
+    import cv
 except ImportError:
     cv = None
 
