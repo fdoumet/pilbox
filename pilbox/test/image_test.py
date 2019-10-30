@@ -13,7 +13,7 @@ from pilbox.image import color_hex_to_dec_tuple, Image
 
 
 try:
-    import cv2
+    import cv2 as cv
 except ImportError:
     cv = None
 
