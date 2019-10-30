@@ -42,7 +42,7 @@ except ImportError:
     from cStringIO import StringIO as BytesIO
 
 try:
-    import cv
+    import cv2
 except ImportError:
     cv = None
 
